@@ -1,0 +1,158 @@
+---
+title: "Untitled"
+format: html
+---
+
+
+```{r}
+library(tidyverse)
+```
+
+Чтение данных и приведение столбцов к факторам
+```{r}
+data <- read_delim("data/data_csv.csv", delim = ",", n_max = 10)
+data$Группа <- factor(data$Группа)
+data$Пол <- factor(data$Пол)
+data$`Группа крови` <- factor(data$`Группа крови`)
+data
+```
+запись
+
+```{r}
+write_delim(data, "out/data_csv.csv", delim = ",")
+list.files("out")
+```
+
+
+```{r}
+read_csv("data/data_csv.csv", skip = 0, n_max = 10) # разделитель — запятая
+read_csv2("data/data_csv2.csv", skip = 0, n_max = 10) # разделитель — точка с запятой
+read_tsv("data/data_tsv.tsv", skip = 0, n_max = 10) # разделитель — символ табуляции
+
+write_csv(data, "out/data_csv.csv")
+write_excel_csv(data, "out/data_csv.csv")
+write_csv2(data, "out/data_csv2.csv")
+write_excel_csv2(data, "out/data_csv2.csv")
+write_tsv(data, "out/data_tsv.tsv")
+```
+
+
+```{r}
+data2 <- read_tsv("data/data_tsv.tsv")
+data2
+summary(data2)
+```
+
+```{r}
+readxl::read_excel("data/data_excel.xlsx", sheet = "data")
+
+openxlsx::write.xlsx(data, "out/data_excel.xlsx", colNames = TRUE)
+```
+
+```{r}
+read_rds("data/data_rds.rds")
+write_rds(data, "out/data_rsd.rds")
+```
+Два способа обратиться к столбцу: $ и [[ ]]
+```{r}
+data
+data$'Группа крови'
+data[["Группа крови"]]
+```
+
+
+```{r}
+tibble(
+  var_first = 1:10,
+  var_second = var_first^2
+)
+
+tibble(
+  var_first = 1:10,
+  var_second = if_else(var_first < 5, var_first + 100, var_first)
+)
+```
+```{r}
+
+tibble(`var 1` = 1:10, `var 2` = `var 1` * 100)
+tibble(var_first = 1:10, var_second = ifelse(var_first < 5, var_first + 100, var_first))
+```
+
+```{r}
+data |>
+  add_column(just_column = "just values", .before = 1)
+
+data |>
+  add_row(Группа = "New group", Возраст = 100, .before = 1)
+
+data |>
+  mutate(ID = row_number())
+```
+function(x) mean(x) > 10 & max(x) < 50
+
+
+```{r}
+data
+
+data |> select(`Группа крови`, `Рост`)
+
+data |> select(starts_with("б"))
+data |> select(contains("_E1"))
+data |> select(matches("_E\\d{1}"))
+
+data |> select(where(is.numeric))
+data |> select(where(function(x) is.numeric(x) && mean(x, na.rm = TRUE) > 10))
+
+variables <- c("Базофилы_E1", "Эозинофилы_E1", "Гемоглобин_E1")
+data |> select(all_of(variables))
+
+variables_missing <- c(variables, "Имя отсутствующей переменной")
+data |> select(any_of(variables_missing))
+
+data |> select(`Группа`, starts_with("Гемоглобин"))
+data |> select(!where(is.numeric))
+data |> select(`Группа крови`, `Возраст`, function(x) anyNA(x))
+
+data |> select(where(is.numeric) & where(function(x) sd(x, na.rm = TRUE) > 1))
+data |> select(`Группа`, function(x) !is.factor(x))
+data |> select(`Пол`, `Группа`, `Базофилы_E1`)
+data |> select(`Группа`, (function(x) is.factor(x)) | where(function(x) is.numeric(x)))
+
+data |> select(where(function(x) is.character(x) & any(str_detect(x, "Жен"), na.rm = TRUE)))
+data |> select(function(x) sd(x, na.rm = TRUE) > 1)
+```
+
+
+```{r}
+data |> select(`Пол`, `Эритроциты_E1`, everything())
+
+data |> relocate(contains("Эритроциты"), .after = `Группа крови`)
+
+data |>
+  select(
+    `Эритроциты1` = `Эритроциты_E1`,
+    `Эритроциты2` = `Эритроциты_E2`
+  )
+
+data |>
+  rename(
+    `Эритроциты1` = `Эритроциты_E1`,
+    `Эритроциты2` = `Эритроциты_E2`
+  )
+```
+
+
+```{r}
+data |> filter(if_all(.cols = contains("Базофилы"), .fns = function(x) x > 1.5))
+
+data |> filter(if_any(.cols = contains("Базофилы"), .fns = function(x) x > 1.5))
+```
+
+```{r}
+data |> mutate(across(!contains("E1") & !c(`Группа`, `Возраст`) & where(is.numeric), function(x) x ^ 2), across(contains("E2"), function(x) x * 100))
+
+data |> mutate(across(function(x) any(near(x, 0.5, tol = 0.1)), function(x) x + 1000))
+data |> mutate(across(!contains("E1") & !c(`Группа`, `Возраст`), function(x) x ^ 2))
+
+data |> mutate(across(!contains("E1"), function(x) str_c(x, " + некая строка")))
+```
